@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เข้าสู่ระบบ / สมัครสมาชิก</title>
+<style>
+  :root {
+    --bg: #f3f4f8; --card: #ffffff; --text: #1c1e26; --muted: #6b7080;
+    --border: #dcdfe8; --primary: #4f46e5; --primary-h: #4338ca; --on-primary: #ffffff;
+    --err: #d92d4b; --ok: #12924f; --shadow: 0 10px 40px rgba(30,30,60,.10);
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12131a; --card: #1c1e29; --text: #eceef6; --muted: #9a9fb3;
+      --border: #333648; --primary: #7c78ff; --primary-h: #6a66f0; --on-primary: #10101a;
+      --err: #ff6b84; --ok: #3ddc84; --shadow: 0 10px 40px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12131a; --card: #1c1e29; --text: #eceef6; --muted: #9a9fb3;
+    --border: #333648; --primary: #7c78ff; --primary-h: #6a66f0; --on-primary: #10101a;
+    --err: #ff6b84; --ok: #3ddc84; --shadow: 0 10px 40px rgba(0,0,0,.45);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: "Noto Sans Thai", "Sarabun", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .card {
+    width: 100%; max-width: 400px; background: var(--card); border-radius: 18px;
+    box-shadow: var(--shadow); padding: 32px 28px 24px;
+    animation: pop .35s ease;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  .sub { margin: 0 0 22px; color: var(--muted); font-size: .92rem; }
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: .85rem; margin-bottom: 6px; font-weight: 600; }
+  .input-wrap { position: relative; }
+  input {
+    width: 100%; padding: 12px 14px; font: inherit; color: var(--text);
+    background: transparent; border: 1.5px solid var(--border); border-radius: 10px; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+  input.invalid { border-color: var(--err); }
+  .input-wrap input { padding-right: 46px; }
+  .eye {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: none; border: 0; cursor: pointer; padding: 8px; color: var(--muted); display: flex;
+  }
+  .eye:hover { color: var(--text); }
+  .eye svg { width: 20px; height: 20px; }
+  .msg { min-height: 20px; font-size: .85rem; margin: -4px 0 12px; }
+  .msg.err { color: var(--err); }
+  .msg.ok { color: var(--ok); }
+  .btn {
+    width: 100%; padding: 12px; font: inherit; font-weight: 700; border: 0; border-radius: 10px;
+    background: var(--primary); color: var(--on-primary); cursor: pointer; transition: background .15s, transform .05s;
+  }
+  .btn:hover { background: var(--primary-h); }
+  .btn:active { transform: scale(.99); }
+  .footer { margin-top: 18px; display: flex; justify-content: flex-start; }  /* มุมล่างซ้าย */
+  .link { background: none; border: 0; padding: 0; font: inherit; font-size: .9rem; color: var(--primary); cursor: pointer; }
+  .link:hover { text-decoration: underline; }
+  .hidden { display: none !important; }
+  .welcome { text-align: center; }
+  .avatar {
+    width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 14px; display: grid; place-items: center;
+    background: var(--primary); color: var(--on-primary); font-size: 2rem; font-weight: 700;
+  }
+  .welcome .btn { margin-top: 20px; }
+  #toast {
+    position: fixed; left: 50%; top: calc(16px + env(safe-area-inset-top, 0px)); transform: translate(-50%, -140%);
+    background: var(--ok); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: .9rem;
+    box-shadow: var(--shadow); transition: transform .3s; z-index: 10; max-width: 90vw;
+  }
+  #toast.show { transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- ===== หน้าเข้าสู่ระบบ ===== -->
+  <section id="view-login">
+    <h1>เข้าสู่ระบบ</h1>
+    <p class="sub">ยินดีต้อนรับกลับ กรุณากรอกข้อมูลของคุณ</p>
+    <form id="form-login" novalidate>
+      <div class="field">
+        <label for="l-id">ชื่อผู้ใช้ หรือ อีเมล</label>
+        <input id="l-id" autocomplete="username" placeholder="username หรือ you@email.com">
+      </div>
+      <div class="field">
+        <label for="l-pw">รหัสผ่าน</label>
+        <div class="input-wrap">
+          <input id="l-pw" type="password" autocomplete="current-password" placeholder="••••••••">
+          <button type="button" class="eye" data-target="l-pw" aria-label="แสดง/ซ่อนรหัสผ่าน"></button>
+        </div>
+      </div>
+      <div id="l-msg" class="msg" role="alert"></div>
+      <button class="btn" type="submit">เข้าสู่ระบบ</button>
+    </form>
+    <div class="footer"><button class="link" data-go="register">ยังไม่มีบัญชี? สมัครสมาชิก</button></div>
+  </section>
+
+  <!-- ===== หน้าสมัครสมาชิก ===== -->
+  <section id="view-register" class="hidden">
+    <h1>สมัครสมาชิก</h1>
+    <p class="sub">สร้างบัญชีใหม่ใช้เวลาไม่ถึงนาที</p>
+    <form id="form-register" novalidate>
+      <div class="field">
+        <label for="r-user">ชื่อผู้ใช้</label>
+        <input id="r-user" autocomplete="username" placeholder="อย่างน้อย 3 ตัวอักษร">
+      </div>
+      <div class="field">
+        <label for="r-email">อีเมล</label>
+        <input id="r-email" type="email" autocomplete="email" placeholder="you@email.com">
+      </div>
+      <div class="field">
+        <label for="r-pw">รหัสผ่าน</label>
+        <div class="input-wrap">
+          <input id="r-pw" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร">
+          <button type="button" class="eye" data-target="r-pw" aria-label="แสดง/ซ่อนรหัสผ่าน"></button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="r-pw2">ยืนยันรหัสผ่านอีกครั้ง</label>
+        <div class="input-wrap">
+          <input id="r-pw2" type="password" autocomplete="new-password" placeholder="พิมพ์รหัสผ่านซ้ำ">
+          <button type="button" class="eye" data-target="r-pw2" aria-label="แสดง/ซ่อนรหัสผ่าน"></button>
+        </div>
+      </div>
+      <div id="r-msg" class="msg" role="alert"></div>
+      <button class="btn" type="submit">ยืนยัน</button>
+    </form>
+    <div class="footer"><button class="link" data-go="login">← กลับไปหน้าเข้าสู่ระบบ</button></div>
+  </section>
+
+  <!-- ===== Dashboard ===== -->
+  <section id="view-dash" class="hidden welcome">
+    <div class="avatar" id="d-avatar">?</div>
+    <h1>ยินดีต้อนรับ, <span id="d-name"></span></h1>
+    <p class="sub" id="d-email"></p>
+    <p>คุณเข้าสู่ระบบเรียบร้อยแล้ว 🎉</p>
+    <button class="btn" id="btn-logout">ออกจากระบบ</button>
+  </section>
+
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+/* ============================================================
+   ส่วนจัดการข้อมูล (Mock Database ด้วย localStorage)
+   ============================================================ */
+const USERS_KEY = 'demo_users';     // รายชื่อผู้ใช้ทั้งหมด
+const SESSION_KEY = 'demo_session'; // ผู้ใช้ที่ล็อกอินอยู่
+let memoryStore = {};               // สำรองกรณี localStorage ใช้ไม่ได้
+
+function store(key, value) {        // อ่าน/เขียนแบบปลอดภัย (try/catch)
+  try {
+    if (value === undefined) return localStorage.getItem(key);
+    if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+  } catch (e) {
+    if (value === undefined) return memoryStore[key] ?? null;
+    if (value === null) delete memoryStore[key]; else memoryStore[key] = value;
+  }
+}
+const getUsers = () => { try { return JSON.parse(store(USERS_KEY)) || []; } catch { return []; } };
+const saveUsers = (list) => store(USERS_KEY, JSON.stringify(list));
+
+/* เข้ารหัสผ่านด้วย SHA-256 + salt (ไม่เก็บรหัสผ่านตรง ๆ) — เป็นการจำลองเท่านั้น
+   ระบบจริงต้อง hash ฝั่งเซิร์ฟเวอร์ด้วย bcrypt/argon2 */
+async function hashPassword(pw, salt) {
+  const data = new TextEncoder().encode(salt + pw);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const newSalt = () => [...crypto.getRandomValues(new Uint8Array(8))].map(b => b.toString(16).padStart(2, '0')).join('');
+
+/* ============================================================
+   ส่วน UI: สลับหน้า, แสดง/ซ่อนรหัสผ่าน, แจ้งเตือน
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const views = { login: $('view-login'), register: $('view-register'), dash: $('view-dash') };
+
+function showView(name) {
+  Object.entries(views).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
+  setMsg('l-msg'); setMsg('r-msg');
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => showView(b.dataset.go)));
+
+function setMsg(id, text = '', type = 'err') {
+  const el = $(id); el.textContent = text; el.className = 'msg ' + (text ? type : '');
+}
+function markInvalid(ids = []) {
+  document.querySelectorAll('input').forEach(i => i.classList.toggle('invalid', ids.includes(i.id)));
+}
+let toastTimer;
+function toast(text) {
+  const t = $('toast'); t.textContent = text; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ปุ่มตา แสดง/ซ่อนรหัสผ่าน
+const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 20C5 20 1 12 1 12a18.6 18.6 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/></svg>';
+document.querySelectorAll('.eye').forEach(btn => {
+  btn.innerHTML = EYE;
+  btn.addEventListener('click', () => {
+    const input = $(btn.dataset.target);
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.innerHTML = show ? EYE_OFF : EYE;
+  });
+});
+
+/* ============================================================
+   สมัครสมาชิก (Register) + Validation
+   ============================================================ */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+$('form-register').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = $('r-user').value.trim();
+  const email = $('r-email').value.trim();
+  const pw = $('r-pw').value;
+  const pw2 = $('r-pw2').value;
+
+  // 1) กรอกครบทุกช่องหรือไม่
+  const empty = [['r-user', username], ['r-email', email], ['r-pw', pw], ['r-pw2', pw2]]
+    .filter(([, v]) => !v).map(([id]) => id);
+  if (empty.length) { markInvalid(empty); return setMsg('r-msg', 'กรุณากรอกข้อมูลให้ครบทุกช่อง'); }
+
+  // 2) ตรวจรูปแบบชื่อผู้ใช้ (ห้ามมี @ เพื่อไม่ให้สับสนกับอีเมลตอนล็อกอิน)
+  if (username.length < 3 || /[\s@]/.test(username)) {
+    markInvalid(['r-user']);
+    return setMsg('r-msg', 'ชื่อผู้ใช้ต้องยาวอย่างน้อย 3 ตัว และห้ามมีช่องว่างหรือ @');
+  }
+  // 3) ตรวจรูปแบบอีเมล
+  if (!EMAIL_RE.test(email)) { markInvalid(['r-email']); return setMsg('r-msg', 'รูปแบบอีเมลไม่ถูกต้อง'); }
+  // 4) ความยาวรหัสผ่าน
+  if (pw.length < 6) { markInvalid(['r-pw']); return setMsg('r-msg', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); }
+  // 5) รหัสผ่านตรงกันหรือไม่
+  if (pw !== pw2) { markInvalid(['r-pw', 'r-pw2']); return setMsg('r-msg', 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน'); }
+
+  // 6) ตรวจชื่อผู้ใช้/อีเมลซ้ำ (ไม่สนตัวพิมพ์เล็ก-ใหญ่)
+  const users = getUsers();
+  if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+    markInvalid(['r-user']); return setMsg('r-msg', 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว');
+  }
+  if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    markInvalid(['r-email']); return setMsg('r-msg', 'อีเมลนี้ถูกใช้งานแล้ว');
+  }
+
+  // บันทึกผู้ใช้ใหม่
+  try {
+    const salt = newSalt();
+    users.push({ username, email, salt, hash: await hashPassword(pw, salt) });
+    saveUsers(users);
+  } catch (err) {
+    return setMsg('r-msg', 'ไม่สามารถบันทึกข้อมูลได้ ลองใหม่อีกครั้ง');
+  }
+
+  markInvalid(); e.target.reset();
+  showView('login');
+  $('l-id').value = username;
+  setMsg('l-msg', 'สมัครสมาชิกสำเร็จ! เข้าสู่ระบบได้เลย', 'ok');
+  $('l-pw').focus();
+});
+
+/* ============================================================
+   เข้าสู่ระบบ (Login) — รองรับทั้ง username และ email
+   ============================================================ */
+$('form-login').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = $('l-id').value.trim().toLowerCase();
+  const pw = $('l-pw').value;
+
+  if (!id || !pw) {
+    markInvalid([!id && 'l-id', !pw && 'l-pw'].filter(Boolean));
+    return setMsg('l-msg', 'กรุณากรอกชื่อผู้ใช้/อีเมล และรหัสผ่าน');
+  }
+
+  // หาผู้ใช้จาก username หรือ email
+  const user = getUsers().find(u => u.username.toLowerCase() === id || u.email.toLowerCase() === id);
+  if (!user) { markInvalid(['l-id']); return setMsg('l-msg', 'ไม่พบบัญชีนี้ในระบบ'); }
+
+  // เทียบ hash รหัสผ่าน
+  if (await hashPassword(pw, user.salt) !== user.hash) {
+    markInvalid(['l-pw']); return setMsg('l-msg', 'รหัสผ่านไม่ถูกต้อง');
+  }
+
+  // สำเร็จ
+  store(SESSION_KEY, user.username);
+  markInvalid(); e.target.reset(); setMsg('l-msg');
+  toast('เข้าสู่ระบบสำเร็จ');
+  openDashboard(user);
+});
+
+/* ============================================================
+   Dashboard / ออกจากระบบ
+   ============================================================ */
+function openDashboard(user) {
+  $('d-name').textContent = user.username;
+  $('d-email').textContent = user.email;
+  $('d-avatar').textContent = user.username.charAt(0).toUpperCase();
+  showView('dash');
+}
+$('btn-logout').addEventListener('click', () => { store(SESSION_KEY, null); showView('login'); toast('ออกจากระบบแล้ว'); });
+
+// ถ้ามี session เดิมอยู่ ให้เข้า Dashboard ทันที
+(function init() {
+  const name = store(SESSION_KEY);
+  const user = name && getUsers().find(u => u.username === name);
+  if (user) openDashboard(user);
+})();
+</script>
+</body>
+</html>
